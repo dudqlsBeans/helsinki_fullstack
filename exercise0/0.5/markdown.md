@@ -3,12 +3,7 @@ sequenceDiagram
     participant browser
     participant server
 
-    browser->>server: POST https://studies.cs.helsinki.fi/exampleapp/new_note
-    activate server
-    server-->>browser: URL Redirect
-    deactivate server
-
-    browser->>server: GET https://studies.cs.helsinki.fi/exampleapp/notes
+    browser->>server: GET https://studies.cs.helsinki.fi/exampleapp/spa
     activate server
     server-->>browser: HTML document
     deactivate server
@@ -18,21 +13,16 @@ sequenceDiagram
     server-->>browser: the css file
     deactivate server
 
-    browser->>server: GET https://studies.cs.helsinki.fi/exampleapp/main.js
+    browser->>server: GET https://studies.cs.helsinki.fi/exampleapp/spa.js
     activate server
     server-->>browser: the JavaScript file
     deactivate server
 
     Note right of browser: The browser starts executing the JavaScript code that fetches the JSON from the server
 
-    browser->>server: GET chrome-extension://dncepekefegjiljlfbihljgogephdhph/contentscript.js
-    activate server
-    server-->>browser: the JavaScript file
-    deactivate server
-
     browser->>server: GET https://studies.cs.helsinki.fi/exampleapp/data.json
     activate server
-    server-->>browser: [{ "content": "ahhh", "date": "2024-08-10T09:36:10.444Z" }, ... ]
+    server-->>browser: [{ "content": "hi", "date": "2024-08-11T11:48:49.211Z" }, ... ]
     deactivate server
 
     Note right of browser: The browser executes the callback function that renders the notes
