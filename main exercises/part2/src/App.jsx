@@ -13,11 +13,16 @@ const Header = ({ name }) => {
 
 const Content = ({ parts }) => {
   console.log("Parts received in Content:", parts)
+  const total = parts.reduce((sum, part) => { 
+    console.log('what is happening', sum, part)
+    return sum + part.exercises
+  }, 0)
   return (
     <div>
       {parts.map(part => (
         <Part key={part.id} part={part} />
       ))}
+      <p><strong>Total of {total} exercises</strong></p>
     </div>
   )
 }
@@ -50,6 +55,11 @@ const App = () => {
         name: 'State of a component',
         exercises: 14,
         id: 3
+      },
+      {
+        name: 'Redux',
+        exercises: 11,
+        id: 4
       }
     ]
   }
