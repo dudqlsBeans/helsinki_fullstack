@@ -1,43 +1,9 @@
-const Course = ({course}) => {
-  return (
-    <div>
-      <Header name={course.name} />
-      <Content parts={course.parts} />
-    </div>
-  )
-}
-
-const Header = ({ name }) => {
-  return <h2>{name}</h2>
-}
-
-const Content = ({ parts }) => {
-  console.log("Parts received in Content:", parts)
-  const total = parts.reduce((sum, part) => { 
-    console.log('what is happening', sum, part)
-    return sum + part.exercises
-  }, 0)
-  return (
-    <div>
-      {parts.map(part => (
-        <Part key={part.id} part={part} />
-      ))}
-      <p><strong>Total of {total} exercises</strong></p>
-    </div>
-  )
-}
-
-const Part = ({ part }) => {
-  return (
-    <p>
-      {part.name} {part.exercises}
-    </p>
-  )
-}
+import Course from './course'
 
 
 const App = () => {
-  const course = {
+  const courses = [
+  {
     id: 1,
     name: 'Half Stack application development',
     parts: [
@@ -62,9 +28,32 @@ const App = () => {
         id: 4
       }
     ]
+  },
+  {
+    name: 'Node.js',
+    id: 2,
+    parts: [
+      {
+        name: 'Routing',
+        exercises: 3,
+        id: 1
+      },
+      {
+        name: 'Middlewares',
+        exercises: 7,
+        id: 2
+      }
+    ]
   }
+]
   console.log("working here")
-  return <Course course={course} />
+  return (
+  <div>
+    {courses.map(course => (
+      <Course key={course.id} course={course} />
+    ))}
+  </div>
+  )
 }
 
 
