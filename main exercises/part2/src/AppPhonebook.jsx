@@ -1,12 +1,18 @@
 import { useState } from 'react'
+import PersonForm from './components/PersonForm'
+import Filter from './components/Filter'
+import Persons from './components/Persons'
 
 const App = () => {
   const [persons, setPersons] = useState([
-    { name: 'Arto Hellas' , number: '010-1234-5678'},
-    { name: 'Ada Lovelace', number: '010-9999-9999' }
+    { name: 'Arto Hellas', number: '040-123456', id: 1 },
+    { name: 'Ada Lovelace', number: '39-44-5323523', id: 2 },
+    { name: 'Dan Abramov', number: '12-43-234345', id: 3 },
+    { name: 'Mary Poppendieck', number: '39-23-6423122', id: 4 }
   ]) 
   const [newName, setNewName] = useState('')
   const [newNumber, setNewNumber] = useState('')
+  const [filterTerm, setFilterTerm] = useState('')
 
   const handleSubmit = (event) => {
     event.preventDefault()
@@ -28,37 +34,26 @@ const App = () => {
     setNewNumber('')
   }
 
-  const handleChangeName = (event) => {
-    setNewName(event.target.value)
-  }
-
-  const handleChangeNumber = (event) => {
-    setNewNumber(event.target.value)
-  }
+  const filteredPersons = persons.filter(person =>
+    person.name.toLowerCase().includes(filterTerm.toLowerCase())
+  )
 
   return (
     <div>
       <h2>Phonebook</h2>
-      <form onSubmit={handleSubmit}>
-        <div>
-          name: <input value={newName} onChange={handleChangeName}/>
-        </div>
-        <div>
-          number: <input value={newNumber} onChange={handleChangeNumber}/>
-        </div>
-        <div>
-          <button type="submit">add</button>
-        </div>
-      </form>
-
+      <Filter filterTerm={filterTerm} handleFilterChange={e => setFilterTerm(e.target.value)} />
+      <h2>add a new</h2>
+      <PersonForm
+        newName={newName}
+        newNumber={newNumber}
+        handleChangeName={e => setNewName(e.target.value)}
+        handleChangeNumber={e => setNewNumber(e.target.value)}
+        handleSubmit={handleSubmit}
+      />
       <div>debug: {newName}</div>
       <div>debug: {newNumber}</div>
       <h2>Numbers</h2>
-      <ul>
-        {persons.map((person, index) => (
-          <li key={index}>{person.name} {person.number}</li>
-        ))}
-      </ul>
+      <Persons persons={filteredPersons} />
     </div>
   )
 }
