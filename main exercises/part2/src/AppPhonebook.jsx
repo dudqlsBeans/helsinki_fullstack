@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import PersonForm from './components/PersonForm'
 import Filter from './components/Filter'
 import Persons from './components/Persons'
+import axios from 'axios'
 
 const App = () => {
   const [persons, setPersons] = useState([
@@ -13,6 +14,19 @@ const App = () => {
   const [newName, setNewName] = useState('')
   const [newNumber, setNewNumber] = useState('')
   const [filterTerm, setFilterTerm] = useState('')
+
+  const hook = () => {
+    console.log('effect')
+    axios
+      .get('http://localhost:3001/persons') // initiates the fetching of data from the server as well as registers the following function as an event handler for the operation 
+      .then(response => {
+        console.log('promise fulfilled')
+        setPersons(response.data)
+      })
+  }
+
+  useEffect(hook, [])
+  console.log('render', persons.length, 'Persons')
 
   const handleSubmit = (event) => {
     event.preventDefault()

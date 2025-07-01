@@ -1,13 +1,30 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import axios from 'axios'
 import Note from './components/Note'
 
 
-const App = (props) => {
-  const [notes, setNotes] = useState(props.notes)
-  const [newNote, setNewNote] = useState(
-    'a new note...'
-  )
+const App = () => {
+  const [notes, setNotes] = useState([])
+  const [newNote, setNewNote] = useState('')
   const [showAll, setShowAll] = useState(true) // keeping track of which notes should be displayed
+
+  const hook = () => {
+    console.log('effect')
+    axios
+      .get('http://localhost:3001/notes') // initiates the fetching of data from the server as well as registers the following function as an event handler for the operation 
+      .then(response => {
+        console.log('promise fulfilled')
+        setNotes(response.data)
+      })
+  }
+
+  useEffect(hook, []) 
+  /* 
+  takes in two parameters. The first is a function, the effect itself. 
+  The second parameter is used to specify how often the effect is run. If it is empty, then the effect is only 
+  run along with the first render of the component. 
+  */
+  console.log('render', notes.length, 'notes')
 
   const addNote = (event) => {
     event.preventDefault()
