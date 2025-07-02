@@ -16,7 +16,7 @@ axios
 const promise2 = axios.get('http://localhost:3001/foobar')
 console.log(promise2)
 */
-/*
+
 const notes = [
   {
     id: 1,
@@ -37,8 +37,9 @@ const notes = [
 ReactDOM.createRoot(document.getElementById('root')).render(
   <App notes={notes} />
 )
-*/
 
+/*
 ReactDOM.createRoot(document.getElementById('root')).render(
   <App />
 )
+*/
