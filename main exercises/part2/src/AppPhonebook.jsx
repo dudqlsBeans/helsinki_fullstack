@@ -3,6 +3,7 @@ import PersonForm from './components/PersonForm'
 import Filter from './components/Filter'
 import Persons from './components/Persons'
 import personService from './services/phonebook'
+import Notification from './components/Notification'
 
 const App = () => {
   const [persons, setPersons] = useState([
@@ -14,6 +15,7 @@ const App = () => {
   const [newName, setNewName] = useState('')
   const [newNumber, setNewNumber] = useState('')
   const [filterTerm, setFilterTerm] = useState('')
+  const [errorMessage, setErrorMessage] = useState(null)
 
   const hook = () => {
     console.log('effect')
@@ -46,6 +48,7 @@ const App = () => {
             setPersons(persons.map(p => (p.id !== existingPerson.id ? p : returnedPerson)))
             setNewName('')
             setNewNumber('')
+            setErrorMessage(`Updated information for '${updatedPerson.name}'`)
     })
     .catch(error => {
       alert(`The information for ${newName} could not be updated.`)
@@ -59,6 +62,7 @@ const App = () => {
         setPersons(persons.concat(returnedPerson))
         setNewName('')
         setNewNumber('')
+        setErrorMessage(`Added ${newPerson.name}`)
       })
 } 
 
@@ -72,9 +76,15 @@ const App = () => {
         .remove(id)
         .then(() => {
           setPersons(persons.filter(person => person.id !== id))
+          setErrorMessage(`Information of ${name} has been deleted from the server`)
         })
         .catch(error => {
-          alert(`Information of ${name} has already been deleted from the server`)
+          setErrorMessage (
+            `Information of ${name} has already been deleted from the server`
+          )
+          setTimeout(() => {
+            setErrorMessage(null)
+          }, 5000)
           setPersons(persons.filter(person => person.id !== id))
         })
     }
@@ -83,6 +93,7 @@ const App = () => {
   return (
     <div>
       <h2>Phonebook</h2>
+      <Notification message={errorMessage} />
       <Filter filterTerm={filterTerm} handleFilterChange={e => setFilterTerm(e.target.value)} />
       <h2>add a new</h2>
       <PersonForm

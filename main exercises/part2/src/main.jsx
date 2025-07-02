@@ -1,5 +1,6 @@
 import ReactDOM from 'react-dom/client'
 import App from './AppPhonebook'
+import './index.css'
 // import App from './App'
 // import App from './Appnotes'
 /*
