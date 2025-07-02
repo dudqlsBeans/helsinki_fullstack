@@ -31,17 +31,28 @@ const App = () => {
     event.preventDefault()
     const newPerson = { name: newName, number: newNumber }
 
-    // Add the new person only if name is not already in the list
-    if (persons.some(person => person.name === newName)) {
-      alert(`${newName} is already added to phonebook`)
-      return
-    }
+    const existingPerson = persons.find(person => person.name === newName)
 
-    if (persons.some(person => person.number === newNumber)) {
-      alert(`${newNumber} is already added to phonebook`)
-      return
-    }
+    if (existingPerson) {
+      const confirmUpdate = window.confirm(
+        `${newName} is already added to phonebook, replace the number with a new one?`
+      )
 
+      if (confirmUpdate) {
+        const updatedPerson = {...existingPerson, number: newNumber}
+        personService
+          .update(existingPerson.id, updatedPerson)
+          .then(returnedPerson => {
+            setPersons(persons.map(p => (p.id !== existingPerson.id ? p : returnedPerson)))
+            setNewName('')
+            setNewNumber('')
+    })
+    .catch(error => {
+      alert(`The information for ${newName} could not be updated.`)
+    })
+  }
+  return
+  }
     personService
       .create(newPerson)
       .then(returnedPerson => {
@@ -49,11 +60,25 @@ const App = () => {
         setNewName('')
         setNewNumber('')
       })
-  }
+} 
 
   const filteredPersons = persons.filter(person =>
     person.name.toLowerCase().includes(filterTerm.toLowerCase())
   )
+
+  const handleDelete = (id, name) => {
+    if (window.confirm(`Delete ${name}`)) {
+      personService
+        .remove(id)
+        .then(() => {
+          setPersons(persons.filter(person => person.id !== id))
+        })
+        .catch(error => {
+          alert(`Information of ${name} has already been deleted from the server`)
+          setPersons(persons.filter(person => person.id !== id))
+        })
+    }
+  }
 
   return (
     <div>
@@ -70,7 +95,7 @@ const App = () => {
       <div>debug: {newName}</div>
       <div>debug: {newNumber}</div>
       <h2>Numbers</h2>
-      <Persons persons={filteredPersons} />
+      <Persons persons={filteredPersons} handleDelete={handleDelete} />
     </div>
   )
 }
