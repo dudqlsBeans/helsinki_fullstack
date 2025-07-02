@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import PersonForm from './components/PersonForm'
 import Filter from './components/Filter'
 import Persons from './components/Persons'
-import axios from 'axios'
+import personService from './services/phonebook'
 
 const App = () => {
   const [persons, setPersons] = useState([
@@ -17,11 +17,10 @@ const App = () => {
 
   const hook = () => {
     console.log('effect')
-    axios
-      .get('http://localhost:3001/persons') // initiates the fetching of data from the server as well as registers the following function as an event handler for the operation 
-      .then(response => {
-        console.log('promise fulfilled')
-        setPersons(response.data)
+    personService
+      .getAll() // initiates the fetching of data from the server as well as registers the following function as an event handler for the operation 
+      .then(initialPersons => {
+        setPersons(initialPersons)
       })
   }
 
@@ -43,15 +42,12 @@ const App = () => {
       return
     }
 
-    axios
-      .post('http://localhost:3001/persons', newPerson)
-      .then(response => {
-        setPersons(persons.concat(response.data))
+    personService
+      .create(newPerson)
+      .then(returnedPerson => {
+        setPersons(persons.concat(returnedPerson))
         setNewName('')
         setNewNumber('')
-      })
-      .catch(error => {
-        alert('Error adding new person:', error)
       })
   }
 
