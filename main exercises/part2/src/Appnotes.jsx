@@ -91,7 +91,10 @@ const App = () => {
   
   const notesToShow = showAll
     ? notes
-    : notes.filer(note => note.important)
+    : notes.filter(note => note.important)
+
+  console.log(typeof(notesToShow))
+  console.log(notesToShow)
 
   return (
     <div>

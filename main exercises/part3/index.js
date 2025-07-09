@@ -5,6 +5,8 @@ morgan.token('post-data', (req) => {
   return req.method === 'POST' ? JSON.stringify(req.body) : ''  // JSON.stringify() converts a JS value to a JSON string
 })
 
+const cors = require('cors')
+app.use(cors())
 
 let notes = [
   {
@@ -22,7 +24,7 @@ let notes = [
     content: "GET and POST are the most important methods of HTTP protocol",
     important: true
   }
-]
+] 
 
 let persons = [
   { 
@@ -54,16 +56,13 @@ const requestLogger = (request, response, next) => {
   console.log('---')
   next()
 }
-
+app.use(requestLogger)
+app.use(express.static('dist'))
 app.use(express.json()) // activate json parser
 app.use(morgan('tiny'))
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :post-data'))
-app.use(requestLogger)
 
 
-app.get('/', (request, response) => {
-    response.send('<h1>Hello World!</h1>')
-})
 
 app.get('/api/persons', (request, response) => {
   response.json(persons)
@@ -75,7 +74,7 @@ app.get('/api/notes', (request, response) => {
 
 app.get('/api/notes/:id', (request, response) => {
     const id = request.params.id
-    const note = notes.find(note => note.id === id)
+    const note = notes.find((note) => note.id === id)
 
     if (note) {
         response.json(note)
@@ -83,6 +82,7 @@ app.get('/api/notes/:id', (request, response) => {
         response.status(404).end()
     }
 })
+
 
 app.get('/api/persons/:id', (request, response) => {
   const id = request.params.id
@@ -104,6 +104,24 @@ app.get('/info', (request, response) => {
     response.send(info)
 })
 
+app.post('/api/notes', (request, response) => {
+  const body = request.body
+  
+  if (!body.content) {
+    return response.status(400).json({  // w/o the return statement, the code will execute to the very end and the malformed note gets saved to the application
+      error: 'content missing'
+    })
+  }
+  const note = {
+    content: body.content,
+    important: body.important || false, 
+    id: generateId(),
+  }
+  notes = notes.concat(note)
+
+  response.json(note)
+})
+
 
 app.delete('/api/notes/:id', (request, response) => {
   const id = request.params.id
@@ -116,6 +134,9 @@ this will now handle all HTTP GET requests that are of the form /api/notes/somet
 the id parameter in the route of a request can be accessed through the request object
 */
 
+
+
+
 app.delete('/api/persons/:id', (request, response) => {
   const id = request.params.id
   persons = persons.filter(person => person.id !== id)
@@ -124,36 +145,6 @@ app.delete('/api/persons/:id', (request, response) => {
 })
 
 
-
-const generateId = () => {
-  const maxId = notes.length > 0
-    /* 
-    n => Number(n.id)) creates a new array that contains all the ids of the notes in number form
-    Math.max returns the max value of the numbers that are passed to it
-    this cannot take in an array, therefore, the array can be transformed into individual numbers with the ... three dots syntax
-    */
-    ? Math.max(...notes.map(n => Number(n.id))) 
-    : 0
-    return String(maxId + 1)
-}
-
-app.post('/api/notes', (request, response) => {
-  const body = request.body
-  
-  if (!body.content) {
-    return response.status(400).json({  // w/o the return statement, the code will execute to the very end and the malformed note gets saved to the application
-      error: 'content missing'
-    })
-  }
-  const note = {
-    content: body.content,
-    important: body.important || null, 
-    id: generateId(),
-  }
-  notes = notes.concat(note)
-
-  response.json(note)
-})
 /*
 this makes it possible to add new notes to the server
 */ 
@@ -189,13 +180,28 @@ app.post('/api/persons', (request, response) => {
   response.json(person)
 })
 
+const generateId = () => {
+  const maxId = notes.length > 0
+    /* 
+    n => Number(n.id)) creates a new array that contains all the ids of the notes in number form
+    Math.max returns the max value of the numbers that are passed to it
+    this cannot take in an array, therefore, the array can be transformed into individual numbers with the ... three dots syntax
+    */
+    ? Math.max(...notes.map(n => Number(n.id))) 
+    : 0
+    return String(maxId + 1)
+}
+
+app.use(express.static('dist'))
 const unknownEndpoint = (request, response) => {
   response.status(404).send({ error: 'unknown endpoint' })
 }
 
 app.use(unknownEndpoint)
 
-const PORT = 3001
-app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`)
+
+const PORT = process.env.PORT || 80
+const HOST = process.env.HOST || '0.0.0.0'
+app.listen(PORT, HOST, () => {
+    console.log(`Server running on port ${HOST}:${PORT}`)
 })
