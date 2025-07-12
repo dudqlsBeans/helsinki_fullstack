@@ -52,6 +52,8 @@ const App = () => {
     })
     .catch(error => {
       alert(`The information for ${newName} could not be updated.`)
+      console.log(error.response.data.error)
+      setErrorMessage(error.response.data.error)
     })
   }
   return
@@ -63,6 +65,10 @@ const App = () => {
         setNewName('')
         setNewNumber('')
         setErrorMessage(`Added ${newPerson.name}`)
+      })
+      .catch(error => {
+        console.log(error.response.data.error)
+        setErrorMessage(error.response.data.error)
       })
 } 
 

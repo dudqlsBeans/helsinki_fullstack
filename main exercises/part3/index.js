@@ -11,26 +11,25 @@ morgan.token('post-data', (req) => {
 })
 
 const cors = require('cors')
-const person = require('./models/person')
 app.use(cors())
 
 let notes = [
   {
-    id: "1",
-    content: "HTML is easy",
+    id: '1',
+    content: 'HTML is easy',
     important: true
   },
   {
-    id: "2",
-    content: "Browser can execute only JavaScript",
+    id: '2',
+    content: 'Browser can execute only JavaScript',
     important: false
   },
   {
-    id: "3",
-    content: "GET and POST are the most important methods of HTTP protocol",
+    id: '3',
+    content: 'GET and POST are the most important methods of HTTP protocol',
     important: true
   }
-] 
+]
 
 
 const requestLogger = (request, response, next) => {
@@ -55,21 +54,21 @@ app.get('/api/persons', (request, response) => {
 })
 
 app.get('/api/notes', (request, response) => {
-    Note.find({}).then(notes => {
-      response.json(notes)
-    })
+  Note.find({}).then(notes => {
+    response.json(notes)
+  })
 })
 
 app.get('/api/notes/:id', (request, response, next) => {
-    Note.findById(request.params.id)
-      .then(note => {
-        if (note) {
-          response.json(note)
-        } else {
-          response.status(404).end()
-        }
-      })
-      .catch(error => next(error))
+  Note.findById(request.params.id)
+    .then(note => {
+      if (note) {
+        response.json(note)
+      } else {
+        response.status(404).end()
+      }
+    })
+    .catch(error => next(error))
 })
 
 
@@ -90,28 +89,30 @@ app.get('/info', (request, response) => {
     .then(count => {
       const date = new Date()
       response.send(`
-        <p>Phonebook has info for ${persons.length} people</p>
+        <p>Phonebook has info for ${Person.length} people</p>
         <p>${date}</p>    
       `)
     })
 })
 
-app.post('/api/notes', (request, response) => {
+app.post('/api/notes', (request, response, next) => {
   const body = request.body
-  
+
   if (!body.content) {
     return response.status(400).json({  // w/o the return statement, the code will execute to the very end and the malformed note gets saved to the application
       error: 'content missing'
     })
   }
-  const note = {
+  const note = new Note({
     content: body.content,
-    important: body.important || false, 
+    important: body.important || false,
     id: generateId(),
-  }
-  notes = notes.concat(note)
-
-  response.json(note)
+  })
+  note.save()
+    .then(savedNote => {
+      response.json(savedNote)
+    })
+    .catch(error => next(error))
 })
 
 
@@ -131,7 +132,7 @@ the id parameter in the route of a request can be accessed through the request o
 
 
 app.delete('/api/persons/:id', (request, response, next) => {
-  Person.findByIdandRemove(request.params.id)
+  Person.findByIdAndDelete(request.params.id)
     .then(() => {
       response.status(204).end()
     })
@@ -158,14 +159,14 @@ app.put('/api/notes/:id', (request, response, next) => {
 })
 
 app.put('/api/persons/:id', (request, response, next) => {
-  const {name, number } = request.body
+  const { name, number } = request.body
 
   const updatedPerson = { name, number }
 
   Person.findByIdAndUpdate(
-    request.params.id, 
+    request.params.id,
     updatedPerson,
-    { new: true, runValidators: true, context: 'query'}
+    { new: true, runValidators: true, context: 'query' }
   )
     .then(updatedDoc => {
       if (updatedDoc) {
@@ -182,11 +183,11 @@ const generateIdRandom = () => {
   const maxId = notes.length > 0
     ? Math.floor(Math.random(...notes.map(n => Number(n.id))) * 1_000_000_000)
     : 0
-    return String(maxId)
+  return String(maxId)
 }
 app.post('/api/persons', (request, response, next) => {
-  const {name, number} = request.body
-  
+  const { name, number } = request.body
+
   if (!name || !number) {
     return response.status(400).json({  // w/o the return statement, the code will execute to the very end and the malformed note gets saved to the application
       error: 'name or number missing'
@@ -195,14 +196,14 @@ app.post('/api/persons', (request, response, next) => {
   Person.findOne({ name: name })
     .then(existingPerson => {
       if (existingPerson) {
-        existingPerson.number = number 
+        existingPerson.number = number
         existingPerson.save()
           .then(updatedPerson => {
             response.json(updatedPerson)
           })
           .catch(error => next(error))
       } else {
-        const person = new Person({ name, number })     
+        const person = new Person({ name, number })
         person.save()
           .then(savedPerson => {
             response.json(savedPerson)
@@ -214,14 +215,14 @@ app.post('/api/persons', (request, response, next) => {
 
 const generateId = () => {
   const maxId = notes.length > 0
-    /* 
+    /*
     n => Number(n.id)) creates a new array that contains all the ids of the notes in number form
     Math.max returns the max value of the numbers that are passed to it
     this cannot take in an array, therefore, the array can be transformed into individual numbers with the ... three dots syntax
     */
-    ? Math.max(...notes.map(n => Number(n.id))) 
+    ? Math.max(...notes.map(n => Number(n.id)))
     : 0
-    return String(maxId + 1)
+  return String(maxId + 1)
 }
 
 app.use(express.static('dist'))
@@ -236,7 +237,9 @@ const errorHandler = (error, request, response, next) => {
 
   if (error.name === 'CastError') {
     return response.status(400).send({ error: 'malformatted id' })
-  } 
+  } else if (error.name === 'ValidationError') {
+    return response.status(400).json({ error: error.message })
+  }
 
   next(error)
 }
@@ -249,5 +252,5 @@ app.use(errorHandler)
 const PORT = process.env.PORT || 80
 const HOST = process.env.HOST || '0.0.0.0'
 app.listen(PORT, HOST, () => {
-    console.log(`Server running on port ${HOST}:${PORT}`)
+  console.log(`Server running on port ${HOST}:${PORT}`)
 })
