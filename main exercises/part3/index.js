@@ -1,11 +1,17 @@
+require('dotenv').config() // dotenv should get imported before the note model is imported. This ensures that the env var from the .env file are available globally before the code from the other modules is imported
 const express = require('express')
+const Note = require('./models/note')
+const Person = require('./models/person')
+
 const app = express()
+
 const morgan = require('morgan')
 morgan.token('post-data', (req) => {
   return req.method === 'POST' ? JSON.stringify(req.body) : ''  // JSON.stringify() converts a JS value to a JSON string
 })
 
 const cors = require('cors')
+const person = require('./models/person')
 app.use(cors())
 
 let notes = [
@@ -26,28 +32,6 @@ let notes = [
   }
 ] 
 
-let persons = [
-  { 
-    "id": "1",
-    "name": "Arto Hellas", 
-    "number": "040-123456"
-  },
-  { 
-    "id": "2",
-    "name": "Ada Lovelace", 
-    "number": "39-44-5323523"
-  },
-  { 
-    "id": "3",
-    "name": "Dan Abramov", 
-    "number": "12-43-234345"
-  },
-  { 
-    "id": "4",
-    "name": "Mary Poppendieck", 
-    "number": "39-23-6423122"
-  }
-]
 
 const requestLogger = (request, response, next) => {
   console.log('Method:', request.method)
@@ -56,52 +40,60 @@ const requestLogger = (request, response, next) => {
   console.log('---')
   next()
 }
-app.use(requestLogger)
 app.use(express.static('dist'))
 app.use(express.json()) // activate json parser
+app.use(requestLogger)
 app.use(morgan('tiny'))
 app.use(morgan(':method :url :status :res[content-length] - :response-time ms :post-data'))
 
 
 
 app.get('/api/persons', (request, response) => {
-  response.json(persons)
+  Person.find({}).then(persons => {
+    response.json(persons)
+  })
 })
 
 app.get('/api/notes', (request, response) => {
-    response.json(notes)
+    Note.find({}).then(notes => {
+      response.json(notes)
+    })
 })
 
-app.get('/api/notes/:id', (request, response) => {
-    const id = request.params.id
-    const note = notes.find((note) => note.id === id)
+app.get('/api/notes/:id', (request, response, next) => {
+    Note.findById(request.params.id)
+      .then(note => {
+        if (note) {
+          response.json(note)
+        } else {
+          response.status(404).end()
+        }
+      })
+      .catch(error => next(error))
+})
 
-    if (note) {
-        response.json(note)
-    } else {
+
+app.get('/api/persons/:id', (request, response, next) => {
+  Person.findById(request.params.id)
+    .then(person => {
+      if (person) {
+        response.json(person)
+      } else {
         response.status(404).end()
-    }
-})
-
-
-app.get('/api/persons/:id', (request, response) => {
-  const id = request.params.id
-  const person = persons.find(person => person.id === id)
-
-  if (person) {
-      response.json(person)
-  } else {
-      response.status(404).end()
-  }
+      }
+    })
+    .catch(error => next(error))
 })
 
 app.get('/info', (request, response) => {
-  const date = new Date()
-  const info = `
-    <p>Phonebook has info for ${persons.length} people</p>
-    <p>${date}</p>
-    `
-    response.send(info)
+  Person.countDocuments({})
+    .then(count => {
+      const date = new Date()
+      response.send(`
+        <p>Phonebook has info for ${persons.length} people</p>
+        <p>${date}</p>    
+      `)
+    })
 })
 
 app.post('/api/notes', (request, response) => {
@@ -123,11 +115,12 @@ app.post('/api/notes', (request, response) => {
 })
 
 
-app.delete('/api/notes/:id', (request, response) => {
-  const id = request.params.id
-  notes = notes.filter(note => note.id !== id)
-
-  response.status(204).end()
+app.delete('/api/notes/:id', (request, response, next) => {
+  Note.findByIdAndDelete(request.params.id)
+    .then(result => {
+      response.status(204).end()
+    })
+    .catch(error => next(error))
 })
 /*
 this will now handle all HTTP GET requests that are of the form /api/notes/something, where something is an arbitrary string
@@ -137,47 +130,86 @@ the id parameter in the route of a request can be accessed through the request o
 
 
 
-app.delete('/api/persons/:id', (request, response) => {
-  const id = request.params.id
-  persons = persons.filter(person => person.id !== id)
+app.delete('/api/persons/:id', (request, response, next) => {
+  Person.findByIdandRemove(request.params.id)
+    .then(() => {
+      response.status(204).end()
+    })
+    .catch(error => next(error))
+})
 
-  response.status(204).end()
+app.put('/api/notes/:id', (request, response, next) => {
+  const { content, important } = request.body
+
+  Note.findById(request.params.id) // fetch note to be updated
+    .then(note => {
+      if (!note) {
+        return response.status(404).end()
+      }
+
+      note.content = content
+      note.important = important
+
+      return note.save().then((updatedNote) => {
+        response.json(updatedNote)
+      })
+    })
+    .catch(error => next(error))
+})
+
+app.put('/api/persons/:id', (request, response, next) => {
+  const {name, number } = request.body
+
+  const updatedPerson = { name, number }
+
+  Person.findByIdAndUpdate(
+    request.params.id, 
+    updatedPerson,
+    { new: true, runValidators: true, context: 'query'}
+  )
+    .then(updatedDoc => {
+      if (updatedDoc) {
+        response.json(updatedDoc)
+      } else {
+        response.status(404).end()
+      }
+    })
+    .catch(error => next(error))
 })
 
 
-/*
-this makes it possible to add new notes to the server
-*/ 
 const generateIdRandom = () => {
   const maxId = notes.length > 0
     ? Math.floor(Math.random(...notes.map(n => Number(n.id))) * 1_000_000_000)
     : 0
     return String(maxId)
 }
-app.post('/api/persons', (request, response) => {
-  const body = request.body
+app.post('/api/persons', (request, response, next) => {
+  const {name, number} = request.body
   
-  if (!body.name || !body.number) {
+  if (!name || !number) {
     return response.status(400).json({  // w/o the return statement, the code will execute to the very end and the malformed note gets saved to the application
       error: 'name or number missing'
     })
   }
-
-  const existingPerson = persons.find(p => p.name === body.name)
-  if (existingPerson) {
-    return response.status(409).json({
-      error: 'name must be unique'
+  Person.findOne({ name: name })
+    .then(existingPerson => {
+      if (existingPerson) {
+        existingPerson.number = number 
+        existingPerson.save()
+          .then(updatedPerson => {
+            response.json(updatedPerson)
+          })
+          .catch(error => next(error))
+      } else {
+        const person = new Person({ name, number })     
+        person.save()
+          .then(savedPerson => {
+            response.json(savedPerson)
+          })
+          .catch(error => next(error))
+      }
     })
-  }
-
-  const person = {
-    id: generateIdRandom(),
-    name: body.name,
-    number: body.number || false, 
-  }
-  persons = persons.concat(person)
-
-  response.json(person)
 })
 
 const generateId = () => {
@@ -198,6 +230,20 @@ const unknownEndpoint = (request, response) => {
 }
 
 app.use(unknownEndpoint)
+
+const errorHandler = (error, request, response, next) => {
+  console.error(error.message)
+
+  if (error.name === 'CastError') {
+    return response.status(400).send({ error: 'malformatted id' })
+  } 
+
+  next(error)
+}
+
+// this has to be the last loaded middleware, also all the routes should be registered before this!
+app.use(errorHandler)
+
 
 
 const PORT = process.env.PORT || 80

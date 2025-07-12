@@ -12,12 +12,12 @@ const url = `mongodb+srv://ypyo01:${password}@cluster0.ckwxqch.mongodb.net/?retr
 mongoose.set('strictQuery',false)
 
 mongoose.connect(url)
-
+/*
 const noteSchema = new mongoose.Schema({
   content: String,
   important: Boolean,
 })
-
+*/
 const personSchema = new mongoose.Schema({
     name: String,
     number: String
